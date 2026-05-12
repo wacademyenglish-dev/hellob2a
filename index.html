@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WOLFFY 3.0 | Hello - Adele</title>
+    
+    <!-- Fonts: Outfit (UI), Playfair Display (Epic/Vintage), Special Elite (Typewriter) -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Outfit:wght@300;400;600;700;800&family=Special+Elite&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        sepia: {
+                            bg: '#141210', 
+                            dark: '#1f1c18',
+                            panel: '#2a2622',
+                            border: '#3d3731',
+                            gold: '#c8b292',
+                            light: '#e8dcc7',
+                            accent: '#8b6f4e'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                        vintage: ['"Playfair Display"', 'serif'],
+                        typewriter: ['"Special Elite"', 'monospace'],
+                        mono: ['"Share Tech Mono"', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { 
+            background-color: #141210; color: #e8dcc7; overflow: hidden; 
+            font-family: 'Outfit', sans-serif; user-select: none; 
+        }
+
+        /* RAINY SEPIA BACKGROUND */
+        .rain-overlay {
+            position: fixed; inset: 0; pointer-events: none; z-index: 1; opacity: 0.08;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            mix-blend-mode: overlay;
+        }
+        .vignette {
+            position: fixed; inset: 0; pointer-events: none; z-index: 2;
+            background: radial-gradient(circle at 50% 50%, transparent 40%, rgba(20, 18, 16, 0.9) 100%);
+        }
+
+        /* SLIDE SYSTEM */
+        .slide-container { display: flex; flex-direction: column; overflow-y: auto; height: calc(100vh - 100px); scroll-behavior: smooth; position: relative; z-index: 10; }
+        .slide { display: none; opacity: 0; width: 100%; min-height: 100%; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; transition: opacity 0.5s ease; }
+        .slide.active { display: flex; opacity: 1; animation: fadeIn 0.8s ease-out forwards; }
+        .slide::before, .slide::after { content: ''; margin: auto; }
+
+        @keyframes fadeIn {
+            0% { opacity: 0; filter: blur(8px) sepia(100%); transform: scale(0.98); }
+            100% { opacity: 1; filter: blur(0) sepia(0%); transform: scale(1); }
+        }
+
+        /* UI ELEMENTS */
+        .vintage-panel {
+            background: rgba(42, 38, 34, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(200, 178, 146, 0.2);
+            border-radius: 4px; 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8), inset 0 0 20px rgba(200, 178, 146, 0.05);
+        }
+
+        /* POLAROIDS (Faded Memory Vibe) */
+        .polaroid {
+            background: #fdfbf7; padding: 12px 12px 40px 12px; border-radius: 2px;
+            border: 1px solid #d1c7b8; cursor: pointer;
+            transition: all 0.5s cubic-bezier(0.2, 1, 0.3, 1);
+            position: relative; overflow: hidden; box-shadow: 0 10px 20px rgba(0,0,0,0.6);
+        }
+        .polaroid:hover { transform: translateY(-5px) rotate(-1deg); box-shadow: 0 15px 30px rgba(200, 178, 146, 0.3); }
+        .polaroid-img { width: 100%; aspect-ratio: 1/1; background: #2a2622; border: 1px solid #1f1c18; display: flex; align-items: center; justify-content: center; font-size: 4rem; position: relative; overflow: hidden; }
+        .polaroid-emoji { opacity: 0.1; filter: sepia(100%) blur(2px); transition: all 1.5s ease; transform: scale(0.8); color: #c8b292; }
+        .polaroid.developed .polaroid-emoji { opacity: 1; filter: sepia(0%) blur(0px); transform: scale(1); color: #e8dcc7; }
+        .polaroid-text { position: absolute; bottom: 10px; left: 0; right: 0; text-align: center; color: #141210; font-family: 'Special Elite', monospace; font-size: 16px; opacity: 0; transition: opacity 1s; font-weight: bold;}
+        .polaroid.developed .polaroid-text { opacity: 1; }
+
+        /* BUTTONS & ANIMATIONS */
+        .btn-gold {
+            background: linear-gradient(135deg, #c8b292, #8b6f4e); color: #141210; font-family: 'Outfit', sans-serif; font-weight: 700;
+            padding: 16px 36px; border-radius: 2px; transition: all 0.3s; text-transform: uppercase; letter-spacing: 2px;
+            box-shadow: 0 4px 15px rgba(200, 178, 146, 0.2); border: none;
+        }
+        .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(200, 178, 146, 0.4); }
+        .btn-gold:active { transform: scale(0.95); }
+
+        .rec-glow { animation: recPulse 2s infinite; }
+        @keyframes recPulse {
+            0% { box-shadow: 0 0 10px rgba(200, 178, 146, 0.2); }
+            50% { box-shadow: 0 0 30px rgba(200, 178, 146, 0.6), inset 0 0 10px rgba(200, 178, 146, 0.3); }
+            100% { box-shadow: 0 0 10px rgba(200, 178, 146, 0.2); }
+        }
+
+        .shake { animation: shake 0.4s both; border-color: #ef4444 !important; color: #ef4444 !important; }
+        @keyframes shake { 10%, 90% { transform: translate3d(-2px, 0, 0); } 20%, 80% { transform: translate3d(4px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-6px, 0, 0); } 40%, 60% { transform: translate3d(6px, 0, 0); } }
+
+        /* THE SWITCHBOARD */
+        .switch-container { width: 100px; height: 160px; background: #1f1c18; border: 4px solid #3d3731; border-radius: 8px; position: relative; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 20px 0; box-shadow: inset 0 0 20px rgba(0,0,0,0.8); }
+        .switch-lever { width: 24px; height: 60px; background: linear-gradient(90deg, #c8b292, #8b6f4e); border-radius: 12px; transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); box-shadow: 0 5px 10px rgba(0,0,0,0.5); }
+        .switch-state-up .switch-lever { transform: translateY(-20px); }
+        .switch-state-down .switch-lever { transform: translateY(20px); }
+
+        /* LYRIC HACKER */
+        .lyric-hl { color: #8b6f4e; cursor: pointer; border-bottom: 1px dashed #8b6f4e; transition: 0.3s; padding: 0 4px; }
+        .lyric-hl:hover { color: #c8b292; text-shadow: 0 0 15px rgba(200,178,146,0.6); border-bottom-color: #c8b292; }
+        .lyric-hl.active { color: #141210; background: #c8b292; border-bottom: 2px solid #c8b292; text-shadow: none; font-weight: bold; }
+
+        /* UTILS */
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .vinyl-spin { animation: spin 5s linear infinite; }
+        .paused { animation-play-state: paused; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        .drawer-left { transform: translateX(-100%); transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .drawer-left.open { transform: translateX(0); }
+    </style>
+</head>
+<body class="h-screen w-screen relative overflow-hidden flex flex-col">
+
+    <div class="rain-overlay"></div>
+    <div class="vignette"></div>
+
+    <!-- TEACHER TOOLSET -->
+    <aside id="teacher-panel" class="fixed top-0 left-0 h-full w-full md:w-[450px] bg-sepia-dark border-r border-sepia-border z-[60] drawer-left flex flex-col shadow-[20px_0_50px_rgba(0,0,0,0.9)] pb-[100px]">
+        <div class="p-6 border-b border-sepia-border flex justify-between items-center bg-sepia-bg">
+            <h2 class="font-vintage font-bold text-2xl text-sepia-light uppercase tracking-widest"><i class="fa-solid fa-phone-volume mr-2"></i>Operator</h2>
+            <button onclick="toggleTeacher()" class="text-sepia-accent hover:text-sepia-light text-2xl"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        
+        <div class="p-6 border-b border-sepia-border bg-sepia-panel">
+            <p class="text-[10px] font-mono text-sepia-gold uppercase font-bold tracking-widest mb-4">Instant Feedback</p>
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="praise('PROFOUND')" class="bg-sepia-dark border border-sepia-gold text-sepia-gold py-3 text-sm font-bold rounded hover:bg-sepia-gold hover:text-sepia-bg transition-colors font-vintage tracking-wider">PROFOUND</button>
+                <button onclick="praise('POETIC')" class="bg-sepia-dark border border-sepia-light text-sepia-light py-3 text-sm font-bold rounded hover:bg-sepia-light hover:text-sepia-bg transition-colors font-vintage tracking-wider">POETIC</button>
+            </div>
+        </div>
+
+        <div class="flex-1 p-6 relative flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <p class="text-[10px] font-mono text-sepia-gold uppercase font-bold tracking-widest">Operator Notes</p>
+                <button onclick="document.getElementById('notes').value=''" class="text-xs text-sepia-accent hover:text-red-400 font-bold uppercase"><i class="fa-solid fa-trash mr-1"></i></button>
+            </div>
+            <textarea id="notes" class="flex-1 w-full bg-sepia-bg border border-sepia-border rounded p-4 text-sepia-light font-typewriter text-lg leading-relaxed resize-none focus:outline-none focus:border-sepia-gold shadow-inner" placeholder="Log grammar mistakes or vocabulary here..."></textarea>
+        </div>
+    </aside>
+
+    <!-- PRAISE OVERLAY -->
+    <div id="praise-overlay" class="fixed inset-0 z-[100] pointer-events-none flex items-center justify-center opacity-0 transition-opacity duration-300">
+        <h1 id="praise-text" class="text-7xl md:text-9xl font-bold font-vintage italic text-sepia-light tracking-widest drop-shadow-[0_0_40px_rgba(200,178,146,0.8)] transform scale-50 transition-transform duration-500">PROFOUND</h1>
+    </div>
+
+    <!-- MAIN SLIDE CONTAINER -->
+    <main id="stage" class="flex-1 overflow-y-auto hide-scroll pb-32 slide-container">
+        
+        <!-- TRACK 01: COVER -->
+        <section class="slide active">
+            <div class="vintage-panel p-10 max-w-4xl w-full flex flex-col md:flex-row items-center gap-12 relative overflow-visible">
+                <div class="relative w-64 h-64 md:w-80 md:h-80 shrink-0 group">
+                    <div class="absolute inset-y-0 right-0 w-full h-full rounded-full bg-[#111] border-4 border-[#222] flex items-center justify-center vinyl-spin shadow-2xl transition-transform duration-700 group-hover:translate-x-16 z-10">
+                        <div class="w-24 h-24 rounded-full bg-sepia-bg border border-sepia-border flex flex-col items-center justify-center shadow-inner relative z-10">
+                            <div class="w-3 h-3 rounded-full bg-sepia-light"></div>
+                            <span class="text-[8px] font-bold font-vintage mt-2 text-sepia-light">25</span>
+                        </div>
+                        <div class="absolute inset-2 rounded-full border border-white/5"></div>
+                        <div class="absolute inset-8 rounded-full border border-white/5"></div>
+                    </div>
+                    <img src="https://upload.wikimedia.org/wikipedia/en/8/85/Adele_-_Hello_%28Official_Single_Cover%29.png" alt="Hello Album Cover" class="absolute inset-0 w-full h-full object-cover rounded shadow-[0_0_40px_rgba(0,0,0,0.9)] border border-sepia-border z-20 transition-transform duration-700 group-hover:scale-105 grayscale hover:grayscale-0">
+                </div>
+                <div class="text-center md:text-left z-30">
+                    <span class="bg-sepia-light text-sepia-bg px-3 py-1 font-bold text-[10px] font-mono tracking-widest rounded mb-4 inline-block uppercase">B2 Upper-Intermediate</span>
+                    <h1 class="text-7xl md:text-8xl font-vintage font-bold leading-none mb-2 tracking-tighter text-sepia-light italic">Hello</h1>
+                    <p class="text-xl text-sepia-gold font-sans uppercase tracking-widest mb-8 border-b border-sepia-border pb-4 inline-block">Adele</p>
+                    
+                    <div class="space-y-3 font-mono text-xs text-sepia-accent">
+                        <p><strong class="text-sepia-light">Grammar:</strong> Past Modals of Deduction</p>
+                        <p><strong class="text-sepia-light">Theme:</strong> Time, Apologies, Closure</p>
+                        <p><strong class="text-sepia-light">Mission:</strong> Emotional Argumentation</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TRACK 02: BRIEFING -->
+        <section class="slide">
+            <h2 class="font-mono text-sepia-gold text-[10px] font-bold uppercase tracking-[0.3em] mb-4">Track 02: Setup</h2>
+            <h1 class="font-vintage font-bold text-4xl md:text-6xl text-sepia-light mb-10 tracking-widest text-center italic">The Frequency</h1>
+            
+            <div class="vintage-panel p-10 md:p-14 w-full max-w-4xl mx-auto border-t-2 border-sepia-gold text-left relative">
+                <div class="flex items-center gap-4 mb-8 border-b border-sepia-border pb-6">
+                    <i class="fa-solid fa-phone-slash text-3xl text-sepia-light"></i>
+                    <h3 class="font-vintage text-2xl text-sepia-light uppercase tracking-widest">Grammar Focus</h3>
+                </div>
+                <div class="space-y-6 text-xl leading-relaxed text-sepia-gold font-typewriter">
+                    <p>In this session, we analyze the past through a disconnected line.</p>
+                    <p class="bg-sepia-dark p-6 rounded border border-sepia-border text-lg font-sans">
+                        We use <strong class="text-sepia-light font-bold">Past Modals of Deduction</strong> (Must have, Might have, Couldn't have) to make logical guesses about things that happened in the past.<br><br>
+                        <span class="text-sepia-accent text-base italic">It is the language of overthinking... and trying to understand what went wrong.</span>
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- TRACK 03: VIBE CHECK -->
+        <section class="slide">
+            <h1 class="font-vintage font-bold text-4xl md:text-6xl text-sepia-light mb-8 text-center tracking-widest italic">The Connection</h1>
+            <p class="text-xl font-sans text-sepia-gold mb-12 text-center max-w-3xl">When a relationship (friendship or romantic) ends badly, what is the hardest part about moving on?</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl">
+                <button onclick="vibe(this, 'Closure')" class="vintage-panel p-8 text-center hover:border-sepia-light transition-all border-b-4 border-b-transparent mcq-btn group">
+                    <i class="fa-solid fa-door-closed text-4xl text-sepia-accent group-hover:text-sepia-light mb-4 transition-colors"></i>
+                    <p class="text-2xl font-vintage font-bold text-sepia-light tracking-wider">Lack of Closure</p>
+                    <p class="text-xs font-mono text-sepia-accent mt-2 uppercase">Never getting answers</p>
+                </button>
+                <button onclick="vibe(this, 'Regret')" class="vintage-panel p-8 text-center hover:border-sepia-light transition-all border-b-4 border-b-transparent mcq-btn group">
+                    <i class="fa-solid fa-clock-rotate-left text-4xl text-sepia-accent group-hover:text-sepia-light mb-4 transition-colors"></i>
+                    <p class="text-2xl font-vintage font-bold text-sepia-light tracking-wider">The Regret</p>
+                    <p class="text-xs font-mono text-sepia-accent mt-2 uppercase">Wishing you did better</p>
+                </button>
+                <button onclick="vibe(this, 'Time')" class="vintage-panel p-8 text-center hover:border-sepia-light transition-all border-b-4 border-b-transparent mcq-btn group">
+                    <i class="fa-solid fa-hourglass-half text-4xl text-sepia-accent group-hover:text-sepia-light mb-4 transition-colors"></i>
+                    <p class="text-2xl font-vintage font-bold text-sepia-light tracking-wider">Wasted Time</p>
+                    <p class="text-xs font-mono text-sepia-accent mt-2 uppercase">Feeling you lost years</p>
+                </button>
+            </div>
+            <div id="vibe-hub" class="hidden mt-10 p-6 bg-sepia-panel rounded border-l-4 border-sepia-gold w-full max-w-5xl text-left shadow-lg">
+                <p class="text-sepia-gold font-mono text-[10px] font-bold uppercase mb-2 tracking-widest">Operator Prompt</p>
+                <p class="text-2xl font-bold text-sepia-light font-vintage italic">Explain to your teacher why this specific feeling haunts people the most.</p>
+            </div>
+        </section>
+
+        <!-- TRACK 04: TRIVIA -->
+        <section class="slide">
+            <h2 class="font-mono text-sepia-gold text-[10px] font-bold uppercase tracking-[0.3em] mb-4">Track 04: The Origins</h2>
+            <h1 class="font-vintage font-bold text-4xl md:text-5xl text-sepia-light mb-10 tracking-widest text-center italic">A Historic Return</h1>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-5xl">
+                <div class="vintage-panel p-8 flex flex-col justify-center border-l-2 border-sepia-gold">
+                    <p class="text-xl font-typewriter text-sepia-light leading-relaxed mb-6">Adele took a 3-year hiatus before releasing "Hello". The song broke massive records. But what was its biggest achievement in its first week?</p>
+                </div>
+                <div class="flex flex-col gap-4">
+                    <button onclick="checkTrivia(this, false)" class="vintage-panel p-6 text-left hover:bg-sepia-dark transition-colors border-l-4 border-transparent">
+                        <span class="font-sans font-bold text-xl text-sepia-accent uppercase tracking-wider">A. Most streamed song on Spotify</span>
+                    </button>
+                    <button onclick="checkTrivia(this, true)" class="vintage-panel p-6 text-left hover:bg-sepia-dark transition-colors border-l-4 border-transparent">
+                        <span class="font-sans font-bold text-xl text-sepia-accent uppercase tracking-wider">B. First song to sell 1M digital copies in a week</span>
+                    </button>
+                    <button onclick="checkTrivia(this, false)" class="vintage-panel p-6 text-left hover:bg-sepia-dark transition-colors border-l-4 border-transparent">
+                        <span class="font-sans font-bold text-xl text-sepia-accent uppercase tracking-wider">C. Longest song to hit Billboard #1</span>
+                    </button>
+                </div>
+            </div>
+            <div id="trivia-hub" class="hidden mt-8 w-full max-w-5xl text-left bg-sepia-dark p-6 rounded border border-sepia-border">
+                <p class="text-sepia-gold font-sans text-lg">Correct. It sold over 1.1 million digital copies in its first week in the US alone. The chorus itself took her six months to write, as she struggled to find the perfect way to express an apology.</p>
+            </div>
+        </section>
+
+        <!-- TRACK 05: PRE-LISTENING (DEEP DIVE) -->
+        <section class="slide">
+            <h1 class="font-vintage font-bold text-4xl md:text-6xl text-sepia-bg mb-6 tracking-widest text-center bg-sepia-gold px-8 py-3 rounded italic">Deep Dive</h1>
+            <p class="text-2xl font-sans text-sepia-light mb-12 text-center max-w-4xl">The anatomy of an apology.</p>
+            
+            <div class="vintage-panel p-10 md:p-14 w-full max-w-4xl mx-auto border-t-2 border-sepia-light text-center shadow-2xl">
+                <p class="font-vintage font-bold text-3xl md:text-4xl text-sepia-light leading-tight mb-8 tracking-wider italic">"When you reach out to apologize to someone years later... are you doing it to make them feel better, or to relieve your own guilt?"</p>
+                <div class="h-px w-full bg-sepia-border mb-8"></div>
+                <p class="font-mono text-sepia-accent text-sm uppercase tracking-widest">Selfishness vs. True Remorse</p>
+            </div>
+        </section>
+
+        <!-- TRACK 06: LEXICON I -->
+        <section class="slide">
+            <h2 class="font-mono text-sepia-gold text-[10px] font-bold uppercase tracking-[0.3em] mb-4">Track 06: Lexicon</h2>
+            <h1 class="font-vintage font-bold text-4xl md:text-5xl text-sepia-light mb-6 tracking-widest text-center italic">The Wounds</h1>
+            <p class="font-mono text-sepia-accent text-xs mb-10 text-center uppercase tracking-widest">Develop the memories</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-10 w-full max-w-4xl mx-auto">
+                <div class="polaroid" onclick="developPolaroid(this, 'To heal', 'To become healthy or well again after an injury or emotional pain.', 'Do you believe that time truly heals all emotional wounds?', 'fa-band-aid')">
+                    <div class="polaroid-img"><i class="fa-solid fa-band-aid polaroid-emoji"></i></div>
+                    <div class="polaroid-text">Develop</div>
+                </div>
+                <div class="polaroid" onclick="developPolaroid(this, 'To tear apart', 'To destroy something, or to make someone feel extremely unhappy.', 'What behaviors can slowly tear a strong friendship apart?', 'fa-heart-crack')">
+                    <div class="polaroid-img"><i class="fa-solid fa-heart-crack polaroid-emoji"></i></div>
+                    <div class="polaroid-text">Develop</div>
+                </div>
+            </div>
+            
+            <div id="polaroid-hub-1" class="hidden mt-10 w-full max-w-4xl text-left vintage-panel p-6 border-l-2 border-sepia-gold">
+                <p class="text-sepia-light font-vintage font-bold text-3xl mb-1 tracking-wider" id="polaroid-title-1">Word</p>
+                <p class="text-sepia-gold font-sans text-lg mb-4" id="polaroid-def-1">Definition</p>
+                <div class="bg-sepia-dark p-4 border border-sepia-border rounded">
+                    <span class="font-mono text-sepia-accent text-[10px] font-bold uppercase tracking-widest block mb-2">Operator's Question</span>
+                    <p class="text-sepia-light font-sans text-xl" id="polaroid-q-1">Question</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- TRACK 07: DEBATE I -->
+        <section class="slide">
+            <h2 class="font-mono text-sepia-gold text-[10px] font-bold uppercase tracking-[0.3em] mb-4">Track 07: The Talk</h2>
+            <h1 class="font-vintage font-bold text-4xl md:text-5xl text-sepia-light mb-10 tracking-widest text-center italic">Debate I</h1>
+            
+            <div class="w-full max-w-4xl mx-auto">
+                <div class="vintage-panel p-10 border-l-4 border-sepia-light">
+                    <p class="font-vintage font-bold text-3xl text-sepia-light mb-4 tracking-wider italic">The Myth of Time</p>
+                    <p class="font-sans text-sepia-gold text-xl leading-relaxed mb-6">"They say that time's supposed to heal ya, but I ain't done much healing."</p>
+                    <p class="font-sans text-sepia-light text-2xl font-bold">Is time really a healer, or does it just make us forget the details of the pain?</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- TRACK 08: LEXICON II -->
+        <section class="slide">
+            <h2 class="font-mono text-sepia-gold text-[10px] font-bold uppercase tracking-[0.3em] mb-4">Track 08: Lexicon</h2>
+            <h1 class="font-vintage font-bold text-4xl md:text-5xl text-sepia-light mb-6 tracking-widest text-center italic">The Flaws</h1>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-10 w-full max-w-4xl mx-auto">
+                <div class="polaroid" onclick="developPolaroid(this, 'Typical of me', 'A phrase used to admit that a bad habit or mistake is characteristic of your personality.', 'What is a bad habit that is completely typical of you?', 'fa-person-circle-question')">
+                    <div class="polaroid-img"><i class="fa-solid fa-person-circle-question polaroid-emoji"></i></div>
+                    <div class="polaroid-text">Develop</div>
+                </div>
+                <div class="polaroid" onclick="developPolaroid(this, 'Run out of time', 'To have no time left to complete an action or fix a mistake.', 'Have you ever felt you ran out of time to fix a relationship?', 'fa-hourglass-end')">
+                    <div class="polaroid-img"><i class="fa-solid fa-hourglass-end polaroid-emoji"></i></div>
+                    <div class="polaroid-text">Develop</div>
+                </div>
+            </div>
+            
+            <div id="polaroid-hub-2" class="hidden mt-10 w-full max-w-4xl text-left vintage-panel p-6 border-l-2 border-sepia-gold">
+                <p class="text-sepia-light font-vintage font-bold text-3xl mb-1 tracking-wider" id="polaroid-title-2">Word</p>
+                <p class="text-sepia-gold font-sans text-lg mb-4" id="polaroid-def-2">Definition</p>
+                <div class="bg-sepia-dark p-4 border border-sepia-border rounded">
+                    <span class="font-mono text-sepia-accent text-[10px] font-bold uppercase tracking-widest block mb-2">Operator's Question</span>
+                    <p class="text-sepia-light font-sans text-xl" id="polaroid-q-2">Question</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- TRACK 09: DEBATE II -->
+        <section class="slide">
+            <h2 class="font-mono text-sepia-gold text-[10px] font-bold uppercase tracking-[0.3em] mb-4">Track 09: The Talk</h2>
+            <h1 class="font-vintage font-bold text-4xl md:text-5xl text-sepia-light mb-10 tracking-widest text-center italic">Debate II</h1>
+            
+            <div class="w-full max-w-4xl mx-auto">
+                <div class="vintage-panel p-10 border-l-4 border-sepia-accent">
+                    <p class="font-vintage font-bold text-3xl text-sepia-light mb-4 tracking-wider italic">Self-Awareness vs. Action</p>
+                    <p class="font-sans text-sepia-gold text-xl leading-relaxed mb-6">She admits she talks about herself too much ("I'm sorry for breaking your heart, but it don't matter, it clearly doesn't tear you apart anymore").</p>
+                    <p class="font-sans text-sepia-light text-2xl font-bold">Knowing your flaws ("it's so typical of me") makes it okay to keep making the same mistakes?</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- TRACK 10: VISUAL MISSION -->
+        <section class="slide">
+            <h2 class="font-mono text-sepia-gold text-[10px] font-bold uppercase tracking-[0.3em] mb-4">Track 10: Pre-Screening</h2>
+            <h1 class="font-vintage font-bold text-4xl md:text-6xl text-sepia-light mb-10 tracking-widest text-center italic">Visual Mission</h1>
+            
+            <div class="vintage-panel p-10 md:p-14 w-full max-w-4xl mx-auto text-center border-t-2 border-sepia-gold">
+                <i class="fa-solid fa-video text-5xl text-sepia-accent mb-8"></i>
+                <p class="font-sans font-bold text-2xl md:text-3xl text-sepia-light leading-tight mb-8">"The video has a very specific color grading and uses outdated technology (like a flip phone). Why do you think the director chose this aesthetic?"</p>
+                <button onclick="document.getElementById('vis-hub').classList.remove('hidden'); shootConfetti();" class="btn-gold mt-4 text-sm">Reveal Goal</button>
+            </div>
+            <div id="vis-hub" class="hidden mt-10 w-full max-w-4xl bg-sepia-dark p-6 border-l-2 border-sepia-light text-left rounded shadow-lg">
+                <p class="font-sans text-sepia-gold text-lg">The sepia tones and old technology represent being stuck in the past, unable to move forward into the modern world.</p>
+            </div>
+        </section>
+
+        <!-- TRACK 11: THE VIDEO -->
+        <section class="slide h-full">
+            <div class="flex justify-between items-end w-full max-w-5xl mb-6">
+                <div>
+                    <h2 class="font-mono text-sepia-gold text-[10px] font-bold uppercase tracking-[0.3em] mb-2">Track 11</h2>
+                    <h1 class="font-vintage font-bold text-4xl md:text-5xl text-sepia-light tracking-widest italic">Hello</h1>
+                </div>
+                <span class="bg-red-800 text-white px-2 py-1 font-bold text-[10px] font-mono tracking-widest rounded uppercase">Live</span>
+            </div>
+            
+            <div class="w-full max-w-5xl rounded overflow-hidden border-2 border-sepia-border shadow-[0_0_30px_rgba(0,0,0,0.8)] relative aspect-video bg-black">
+                <iframe class="absolute inset-0 w-full h-full grayscale sepia-[0.3]" src="https://www.youtube.com/embed/YQHsXMglC9A?rel=0" frameborder="0" allowfullscreen></iframe>
+            </div>
+        </section>
+
+        <!-- TRACK 12: FACT CHECK -->
+        <section class="slide">
+            <h2 class="font-mono text-sepia-gold text-[10px] font-bold uppercase tracking-[0.3em] mb-4">Track 12: Observation</h2>
+            <h1 class="font-vintage font-bold text-4xl md:text-5xl text-sepia-light mb-10 tracking-widest text-center italic">Fact Check</h1>
+            
+            <div class="vintage-panel p-10 w-full max-w-4xl mx-auto text-center border-t-2 border-sepia-border">
+                <p class="font-sans text-2xl text-sepia-light mb-10 leading-relaxed">
+                    "Adele used an old flip phone in the video simply because it was her personal phone at the time."
+                </p>
+                <div class="flex gap-6 justify-center">
+                    <button onclick="checkTF(this, false, 'tf-hub')" class="bg-sepia-dark border border-sepia-border px-10 py-4 font-sans font-bold text-2xl text-sepia-accent uppercase tracking-widest rounded hover:border-sepia-light hover:text-sepia-light transition-all">True</button>
+                    <button onclick="checkTF(this, true, 'tf-hub')" class="bg-sepia-dark border border-sepia-border px-10 py-4 font-sans font-bold text-2xl text-sepia-accent uppercase tracking-widest rounded hover:border-sepia-light hover:text-sepia-light transition-all">False</button>
+                </div>
+            </div>
+            <div id="tf-hub" class="hidden mt-8 w-full max-w-4xl bg-sepia-dark p-6 border-l-2 border-sepia-light text-left rounded shadow-lg">
+                <p class="text-sepia-light text-lg font-bold">False. The director, Xavier Dolan, deliberately used a flip phone to avoid making the video feel like a modern car commercial, keeping the focus entirely on the emotional narrative.</p>
+            </div>
+        </section>
+
+        <!-- TRACK 13: LYRIC HACKER I -->
+        <section class="slide">
+            <h2 class="font-mono text-sepia-gold text-[10px] font-bold uppercase tracking-[0.3em] mb-4">Track 13</h2>
+            <h1 class="font-vintage font-bold text-4xl md:text-5xl text-sepia-light mb-6 tracking-widest text-center italic">Lyric Hacker I</h1>
+            <p class="font-mono text-sepia-accent text-xs mb-10 text-center uppercase tracking-widest">Click the dashed text</p>
+
+            <div class="w-full max-w-4xl mx-auto vintage-panel p-10 md:p-14 text-center border-t-2 border-sepia-gold">
+                <div class="space-y-6 text-3xl font-typewriter text-sepia-gold leading-relaxed">
+                    <p>Hello from <span class="lyric-hl" onclick="hackLyric(this, 'lh-1')">the outside</span>,</p>
+                    <p>At least I can say that <span class="lyric-hl" onclick="hackLyric(this, 'lh-2')">I've tried</span></p>
+                </div>
+
+                <div id="lh-1" class="hidden mt-10 bg-sepia-dark p-6 border border-sepia-border rounded text-left">
+                    <span class="font-mono text-sepia-light font-bold text-[10px] uppercase tracking-widest">Metaphor Decode</span>
+                    <p class="text-sepia-gold text-xl mt-2">She is no longer part of his life. She is looking at his world from the outside, isolated.</p>
+                </div>
+                <div id="lh-2" class="hidden mt-10 bg-sepia-dark p-6 border border-sepia-border rounded text-left">
+                    <span class="font-mono text-sepia-light font-bold text-[10px] uppercase tracking-widest">Grammar: Present Perfect</span>
+                    <p class="text-sepia-gold text-xl mt-2">She focuses on the result of her actions up to now. The effort matters to her conscience.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- TRACK 14: LYRIC HACKER II -->
+        <section class="slide">
+            <h2 class="font-mono text-sepia-gold text-[10px] font-bold uppercase tracking-[0.3em] mb-4">Track 14</h2>
+            <h1 class="font-vintage font-bold text-4xl md:text-5xl text-sepia-light mb-6 tracking-widest text-center italic">Lyric Hacker II</h1>
+
+            <div class="w-full max-w-4xl mx-auto vintage-panel p-10 md:p-14 text-center border-t-2 border-sepia-accent">
+                <div class="space-y-6 text-3xl font-typewriter text-sepia-gold leading-relaxed">
+                    <p>I <span class="lyric-hl" onclick="hackLyric(this, 'lh-3')">must have called</span> a thousand times</p>
+                    <p>To tell you I'm sorry, for everything <span class="lyric-hl" onclick="hackLyric(this, 'lh-4')">that I've done</span></p>
+                </div>
+
+                <div id="lh-3" class="hidden mt-10 bg-sepia-dark p-6 border border-sepia-border rounded text-left">
+                    <span class="font-mono text-sepia-light font-bold text-[10px] uppercase tracking-widest">Grammar: Past Modal</span>
+                    <p class="text-sepia-gold text-xl mt-2">A logical deduction about the past. She doesn't have the exact number, but based on her desperation, she assumes it was a thousand times.</p>
+                </div>
+                <div id="lh-4" class="hidden mt-10 bg-sepia-dark p-6 border border-sepia-border rounded text-left">
+                    <span class="font-mono text-sepia-light font-bold text-[10px] uppercase tracking-widest">Meaning Decode</span>
+                    <p class="text-sepia-gold text-xl mt-2">A blanket apology. She isn't apologizing for one specific event, but for the entire destruction of the relationship.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- TRACK 15: LYRIC HACKER III -->
+        <section class="slide">
+            <h2 class="font-mono text-sepia-gold text-[10px] font-bold uppercase tracking-[0.3em] mb-4">Track 15</h2>
+            <h1 class="font-vintage font-bold text-4xl md:text-5xl text-sepia-light mb-6 tracking-widest text-center italic">The Climax</h1>
+
+            <div class="w-full max-w-4xl mx-auto vintage-panel p-10 md:p-14 text-center border-t-2 border-white">
+                <div class="space-y-6 text-3xl font-typewriter text-sepia-gold leading-relaxed">
+                    <p>But when I call, you <span class="lyric-hl" onclick="hackLyric(this, 'lh-5')">never seem to be home</span></p>
+                    <p>It clearly doesn't <span class="lyric-hl" onclick="hackLyric(this, 'lh-6')">tear you apart</span> anymore.</p>
+                </div>
+
+                <div id="lh-5" class="hidden mt-10 bg-sepia-dark p-6 border border-sepia-border rounded text-left">
+                    <span class="font-mono text-sepia-light font-bold text-[10px] uppercase tracking-widest">Context</span>
+                    <p class="text-sepia-gold text-xl mt-2">He is actively ignoring her. He has moved on, reinforcing the fact that her apology is one-sided.</p>
+                </div>
+                <div id="lh-6" class="hidden mt-10 bg-sepia-dark p-6 border border-sepia-border rounded text-left">
+                    <span class="font-mono text-sepia-light font-bold text-[10px] uppercase tracking-widest">Resolution</span>
+                    <p class="text-sepia-gold text-xl mt-2">The painful realization that he is healed, while she is still stuck in the past seeking forgiveness.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- TRACK 16: THE SWITCHBOARD (GRAMMAR METAPHOR) -->
+        <section class="slide">
+            <h2 class="font-mono text-sepia-gold text-[10px] font-bold uppercase tracking-[0.3em] mb-4">Track 16: Mechanics</h2>
+            <h1 class="font-vintage font-bold text-4xl md:text-6xl text-sepia-light mb-10 tracking-widest text-center italic">The Switchboard</h1>
+            
+            <div class="vintage-panel p-10 md:p-14 max-w-5xl w-full flex flex-col md:flex-row items-center gap-12 border-t-2 border-sepia-border">
+                <div class="flex flex-col items-center gap-4 shrink-0 relative">
+                    <span class="font-sans font-bold text-lg text-sepia-accent uppercase tracking-widest" id="switch-lbl-1">The Fact</span>
+                    <div class="switch-container switch-state-up" id="grammar-switch" onclick="toggleSwitch()">
+                        <div class="w-full h-1 bg-sepia-border mb-2"></div>
+                        <div class="switch-lever"></div>
+                        <div class="w-full h-1 bg-sepia-border mt-2"></div>
+                    </div>
+                    <span class="font-sans font-bold text-lg text-sepia-light uppercase tracking-widest opacity-30" id="switch-lbl-2">The Deduction</span>
+                    <p class="text-[10px] font-mono text-sepia-accent uppercase absolute -bottom-8 w-32 text-center">Click to Connect</p>
+                </div>
+
+                <div id="switch-screen" class="flex-1 w-full bg-sepia-bg border border-sepia-border h-64 relative overflow-hidden flex items-center justify-center p-8 rounded shadow-inner">
+                    <!-- FACT -->
+                    <div id="switch-fact" class="absolute inset-0 flex flex-col items-center justify-center transition-all duration-500" style="opacity: 1; transform: translateY(0);">
+                        <p class="font-vintage font-bold text-3xl text-sepia-light mb-4 text-center italic">"He didn't answer the phone."</p>
+                        <span class="font-mono text-sepia-accent text-xs uppercase tracking-widest border border-sepia-border px-3 py-1 rounded">Past Simple (Reality)</span>
+                    </div>
+                    
+                    <!-- DEDUCTION -->
+                    <div id="switch-deduction" class="absolute inset-0 flex flex-col items-center justify-center transition-all duration-500" style="opacity: 0; transform: translateY(20px);">
+                        <p class="font-vintage font-bold text-3xl text-sepia-gold mb-4 text-center italic">"He <u class="decoration-sepia-light">must have been</u> busy."</p>
+                        <span class="font-mono text-sepia-light text-xs uppercase tracking-widest border border-sepia-light px-3 py-1 rounded">Past Modal (Logical Guess)</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TRACK 17: SYNTAX BLUEPRINT -->
+        <section class="slide">
+            <h2 class="font-mono text-sepia-gold text-[10px] font-bold uppercase tracking-[0.3em] mb-4">Track 17: Structure</h2>
+            <h1 class="font-vintage font-bold text-4xl md:text-6xl text-sepia-light mb-10 tracking-widest text-center italic">The Equation</h1>
+            
+            <div class="vintage-panel p-10 md:p-14 w-full max-w-5xl mx-auto flex flex-col items-center gap-8 border-t-2 border-sepia-border">
+                <div class="flex flex-col md:flex-row gap-4 items-center w-full justify-center">
+                    <div class="bg-sepia-bg p-6 border border-sepia-border rounded text-center w-full md:w-4/12">
+                        <span class="block text-sepia-accent font-mono text-[10px] font-bold uppercase tracking-widest mb-2">The Guess</span>
+                        <span class="text-3xl font-sans font-black text-sepia-light">MUST / MIGHT</span>
+                    </div>
+                    <i class="fa-solid fa-plus text-2xl text-sepia-light hidden md:block"></i>
+                    <i class="fa-solid fa-arrow-down text-2xl text-sepia-light md:hidden"></i>
+                    <div class="bg-sepia-bg p-6 border border-sepia-border rounded text-center w-full md:w-3/12">
+                        <span class="block text-sepia-accent font-mono text-[10px] font-bold uppercase tracking-widest mb-2">The Past Hook</span>
+                        <span class="text-3xl font-sans font-black text-sepia-light">HAVE</span>
+                    </div>
+                    <i class="fa-solid fa-plus text-2xl text-sepia-light hidden md:block"></i>
+                    <i class="fa-solid fa-arrow-down text-2xl text-sepia-light md:hidden"></i>
+                    <div class="bg-sepia-bg p-6 border border-sepia-gold rounded text-center w-full md:w-5/12 shadow-[0_0_15px_rgba(200,178,146,0.1)]">
+                        <span class="block text-sepia-gold font-mono text-[10px] font-bold uppercase tracking-widest mb-2">The Action</span>
+                        <span class="text-3xl font-sans font-black text-sepia-light">Past Participle</span>
+                    </div>
+                </div>
+                <p class="text-xl font-typewriter text-sepia-gold mt-6">"I <span class="text-sepia-light border-b border-sepia-light">must have called</span> a thousand times."</p>
+            </div>
+        </section>
+
+        <!-- TRACK 18: SYSTEM CHECK I -->
+        <section class="slide">
+            <h2 class="font-mono text-sepia-gold text-[10px] font-bold uppercase tracking-[0.3em] mb-4">Track 18</h2>
+            <h1 class="font-vintage font-bold text-4xl md:text-6xl text-sepia-light mb-10 tracking-widest text-center italic">System Patch</h1>
+            
+            <div class="vintage-panel p-10 md:p-14 w-full max-w-4xl mx-auto text-center border-t-2 border-sepia-border">
+                <p class="font-sans font-bold text-2xl text-sepia-light mb-10 leading-relaxed">
+                    "I'm almost 100% sure she lost my number. She <span class="text-sepia-accent border-b-2 border-sepia-accent px-4 pb-1"> _____ </span> it."
+                </p>
+                
+                <div class="grid grid-cols-2 gap-6 w-full max-w-2xl mx-auto">
+                    <button class="bg-sepia-bg border border-sepia-border p-6 font-sans font-bold text-xl text-sepia-accent uppercase tracking-widest rounded hover:border-sepia-light transition-colors" onclick="checkPatch(this, true, 'd1-hub')">
+                        must have lost
+                    </button>
+                    <button class="bg-sepia-bg border border-sepia-border p-6 font-sans font-bold text-xl text-sepia-accent uppercase tracking-widest rounded hover:border-sepia-light transition-colors" onclick="checkPatch(this, false, 'd1-hub')">
+                        should have lost
+                    </button>
+                </div>
+                
+                <div id="d1-hub" class="hidden mt-8 font-mono text-sepia-light text-sm font-bold tracking-widest uppercase">> Connection Established. "Must have" is for logical certainty. "Should have" is for regrets or mistakes.</div>
+            </div>
+        </section>
+
+        <!-- TRACK 19: THE MIGHT/COULD SYSTEM -->
+        <section class="slide">
+            <h2 class="font-mono text-sepia-gold text-[10px] font-bold uppercase tracking-[0.3em] mb-4">Track 19: Advanced</h2>
+            <h1 class="font-vintage font-bold text-4xl md:text-6xl text-sepia-light mb-10 tracking-widest text-center italic">The Uncertainty</h1>
+            
+            <div class="vintage-panel p-10 md:p-14 w-full max-w-4xl mx-auto flex flex-col md:flex-row gap-8 items-center justify-between border-l-4 border-sepia-gold">
+                <div class="flex-1">
+                    <p class="font-sans font-bold text-2xl text-sepia-gold mb-6 leading-relaxed">When we are NOT sure about the past (50% chance), we use:<br><br><span class="text-sepia-light font-black text-3xl">MIGHT / MAY / COULD HAVE</span></p>
+                </div>
+                <div class="bg-sepia-bg p-8 border border-sepia-border rounded shadow-lg flex-1 text-center w-full">
+                    <p class="text-sepia-accent font-sans font-bold text-xl uppercase mb-2">The Mystery</p>
+                    <p class="font-typewriter text-sepia-light mb-6 text-lg">"Why didn't he answer?"</p>
+                    <p class="text-sepia-gold font-sans font-bold text-xl uppercase mb-2">The Possibility</p>
+                    <p class="font-typewriter text-sepia-light text-lg">"He <span class="border-b border-sepia-gold pb-1">might have been</span> asleep."</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- TRACK 20: TIMELINE SEQUENCER -->
+        <section class="slide">
+            <h2 class="font-mono text-sepia-gold text-[10px] font-bold uppercase tracking-[0.3em] mb-4">Track 20: Sequencing</h2>
+            <h1 class="font-vintage font-bold text-4xl md:text-5xl text-sepia-light mb-6 tracking-widest text-center italic">The Stages of Apology</h1>
+            <p class="font-mono text-sepia-accent text-xs mb-10 text-center uppercase tracking-widest">Click the stages in chronological order</p>
+
+            <div class="vintage-panel p-10 w-full max-w-4xl mx-auto">
+                <div class="flex flex-col gap-4 w-full" id="timeline-container">
+                    <div class="bg-sepia-bg border border-sepia-border p-6 rounded text-xl font-sans font-bold flex items-center justify-between cursor-pointer hover:border-sepia-light transition-colors timeline-item text-sepia-gold" data-order="3" onclick="selectTimeline(this)">
+                        <span>"You never seem to be home." (Accepting the silence)</span>
+                        <span class="timeline-number font-vintage font-bold text-sepia-bg bg-sepia-light rounded-full w-8 h-8 flex items-center justify-center text-xl hidden"></span>
+                    </div>
+                    <div class="bg-sepia-bg border border-sepia-border p-6 rounded text-xl font-sans font-bold flex items-center justify-between cursor-pointer hover:border-sepia-light transition-colors timeline-item text-sepia-gold" data-order="1" onclick="selectTimeline(this)">
+                        <span>"I've forgotten how it felt before the world fell at our feet." (Nostalgia)</span>
+                        <span class="timeline-number font-vintage font-bold text-sepia-bg bg-sepia-light rounded-full w-8 h-8 flex items-center justify-center text-xl hidden"></span>
+                    </div>
+                    <div class="bg-sepia-bg border border-sepia-border p-6 rounded text-xl font-sans font-bold flex items-center justify-between cursor-pointer hover:border-sepia-light transition-colors timeline-item text-sepia-gold" data-order="2" onclick="selectTimeline(this)">
+                        <span>"I must have called a thousand times." (The desperate attempt)</span>
+                        <span class="timeline-number font-vintage font-bold text-sepia-bg bg-sepia-light rounded-full w-8 h-8 flex items-center justify-center text-xl hidden"></span>
+                    </div>
+                </div>
+            </div>
+            <div id="timeline-hub" class="hidden mt-6 p-4 border-l-4 border-sepia-light bg-sepia-panel font-mono text-sepia-light text-[10px] font-bold w-full max-w-4xl mx-auto text-left tracking-widest uppercase">> Sequence matched. Nostalgia leads to action, which ends in acceptance.</div>
+        </section>
+
+        <!-- TRACK 21: VOCAL BOOTH -->
+        <section class="slide">
+            <h2 class="font-mono text-sepia-gold text-[10px] font-bold uppercase tracking-[0.3em] mb-4">Track 21: Pronunciation</h2>
+            <h1 class="font-vintage font-bold text-4xl md:text-6xl text-sepia-light mb-10 tracking-widest text-center italic">Vocal Booth</h1>
+            
+            <div class="vintage-panel p-10 md:p-14 w-full max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between text-center gap-8 border-t-2 border-sepia-gold">
+                <div class="w-full md:w-5/12 bg-sepia-bg p-8 rounded border border-sepia-border">
+                    <span class="block text-sepia-accent font-mono text-xs font-bold uppercase tracking-widest mb-4">Written</span>
+                    <span class="text-3xl font-bold font-sans text-sepia-light tracking-widest uppercase">MUST HAVE</span>
+                </div>
+                <div class="text-4xl text-sepia-accent hidden md:block"><i class="fa-solid fa-microphone-lines"></i></div>
+                <div class="w-full md:w-5/12 bg-[#0a0908] p-8 rounded border border-sepia-light shadow-[0_0_20px_rgba(200,178,146,0.15)]">
+                    <span class="block text-sepia-light font-mono text-xs font-bold uppercase tracking-widest mb-4">Spoken (Native Reduction)</span>
+                    <span class="text-3xl font-bold font-sans text-sepia-light tracking-widest uppercase"><span class="italic text-sepia-gold">MUSTA</span></span>
+                </div>
+            </div>
+            <p class="text-sepia-gold font-sans mt-10 text-center max-w-2xl text-xl">
+                Native speakers rarely pronounce "have" fully in past modals. "I must have called" sounds like "I musta called". Practice the rhythm!
+            </p>
+        </section>
+
+        <!-- TRACK 22: RAPID FIRE -->
+        <section class="slide" id="slide-rapid">
+            <h2 class="font-mono text-sepia-bg bg-sepia-light px-2 py-1 text-[10px] font-bold uppercase tracking-[0.3em] mb-4 rounded inline-block shadow-[0_0_10px_rgba(232,220,199,0.5)]">High Pressure</h2>
+            <h1 class="font-vintage font-bold text-4xl md:text-6xl text-sepia-light mb-6 tracking-widest text-center italic">Interrogation</h1>
+            <p class="font-sans text-sepia-gold text-xl mb-10 text-center max-w-2xl">Use past modals to guess the answers. You have <strong class="text-sepia-light">15 seconds</strong> per question!</p>
+
+            <div class="vintage-panel p-10 rounded w-full max-w-4xl mx-auto text-center border-4 border-sepia-border relative overflow-hidden" id="rap-container">
+                <div id="rap-bg-flash" class="absolute inset-0 bg-sepia-light opacity-0 pointer-events-none transition-opacity duration-300"></div>
+                <div class="relative z-10">
+                    <div class="text-5xl mb-6 text-sepia-light inline-block p-4"><i class="fa-solid fa-stopwatch"></i></div>
+                    <p class="font-sans font-bold text-3xl md:text-4xl text-sepia-light mb-10 h-24 flex items-center justify-center" id="rap-q">"Your best friend didn't show up to your party. Why?"</p>
+                    
+                    <div class="w-full h-2 bg-sepia-bg mb-8 overflow-hidden rounded border border-sepia-border">
+                        <div id="rap-timer" class="h-full bg-sepia-light w-full transition-all linear"></div>
+                    </div>
+
+                    <button id="rap-btn" onclick="startRapid()" class="btn-gold px-10 py-4 text-xl">Start Tape</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- TRACK 23: VOICE NOTE -->
+        <section class="slide">
+            <h2 class="font-mono text-sepia-bg bg-sepia-gold px-2 py-1 text-[10px] font-bold uppercase tracking-[0.3em] mb-4 rounded inline-block">Roleplay</h2>
+            <h1 class="font-vintage font-bold text-4xl md:text-6xl text-sepia-light mb-10 tracking-widest text-center italic">The Voicemail</h1>
+
+            <div class="w-full max-w-[340px] mx-auto bg-[#0f0e0c] rounded-[2rem] border-8 border-sepia-border h-[550px] shadow-[0_20px_50px_rgba(0,0,0,0.9)] relative flex flex-col overflow-hidden">
+                <div class="bg-sepia-bg p-4 text-center border-b border-sepia-border flex justify-between items-center">
+                    <span class="font-sans font-bold text-red-500 text-xs animate-pulse">REC</span>
+                    <p class="font-sans font-bold text-sepia-light text-sm">To: Old Friend</p>
+                    <i class="fa-solid fa-battery-half text-sepia-accent"></i>
+                </div>
+                
+                <div class="flex-1 p-8 flex flex-col justify-center text-center bg-[#141210] relative">
+                    <p class="font-sans font-bold text-sepia-gold text-lg mb-6 leading-relaxed relative z-10">Leave a 45s voicemail to someone you owe an apology to.</p>
+                    <div class="bg-sepia-bg p-4 border border-sepia-border rounded-lg relative z-10 text-left">
+                        <p class="font-mono text-sepia-light text-[10px] uppercase font-bold tracking-widest mb-2">Target Grammar:</p>
+                        <p class="font-sans text-sm text-sepia-gold">1. Apologize for losing touch.</p>
+                        <p class="font-sans text-sm text-sepia-gold mt-1">2. Use <strong class="font-bold underline text-sepia-light">Must have</strong> or <strong class="font-bold underline text-sepia-light">Might have</strong> to guess how they felt.</p>
+                    </div>
+                </div>
+
+                <div class="bg-sepia-bg p-6 border-t border-sepia-border flex flex-col items-center justify-center h-40 relative">
+                    <button id="vn-btn" onmousedown="startVN()" onmouseup="stopVN()" onmouseleave="stopVN()" ontouchstart="startVN()" ontouchend="stopVN()" class="w-20 h-20 rounded-full bg-sepia-light flex items-center justify-center text-sepia-bg text-3xl transition-transform active:scale-95 border-4 border-[#141210] shadow-[0_0_20px_rgba(232,220,199,0.5)]">
+                        <i class="fa-solid fa-phone"></i>
+                    </button>
+
+                    <div id="vn-overlay" class="absolute inset-0 bg-[#0f0e0c] flex flex-col items-center justify-center gap-4 opacity-0 pointer-events-none transition-opacity px-6 border-t border-sepia-border">
+                        <span class="font-sans font-black text-xl text-red-500 uppercase tracking-widest rec-glow px-3 py-1 rounded">Recording</span>
+                        <div class="w-full h-1 bg-sepia-dark overflow-hidden">
+                            <div id="vn-prog" class="h-full bg-red-500 w-0"></div>
+                        </div>
+                        <span id="vn-time" class="font-mono font-bold text-red-500 text-sm">0:00 / 0:45</span>
+                    </div>
+                </div>
+            </div>
+            <div id="vn-hub" class="hidden mt-6 text-center font-mono text-sepia-light text-xs font-bold tracking-widest uppercase animate-pulse">> Beep. Message saved to inbox.</div>
+        </section>
+
+        <!-- TRACK 24: THE CROSSROADS -->
+        <section class="slide">
+            <h2 class="font-mono text-sepia-bg bg-sepia-light px-2 py-1 text-[10px] font-bold uppercase tracking-[0.3em] mb-2 text-center rounded inline-block">The Dilemma</h2>
+            <h1 class="font-vintage font-bold text-4xl md:text-6xl text-sepia-light mb-10 tracking-widest text-center italic">The Crossroads</h1>
+
+            <div class="w-full max-w-5xl mx-auto flex flex-col md:flex-row gap-6 items-stretch h-full min-h-[400px]">
+                <!-- Context -->
+                <div class="md:w-1/3 vintage-panel p-8 text-center flex flex-col justify-center border-t-2 border-sepia-accent">
+                    <i class="fa-solid fa-scale-balanced text-5xl text-sepia-light mb-6"></i>
+                    <p class="font-sans font-bold text-xl text-sepia-gold mb-6">When you broke someone's heart years ago, what is the right thing to do today?</p>
+                    <p class="font-mono text-[10px] text-sepia-accent font-bold uppercase tracking-widest">Choose and defend for 30s.</p>
+                </div>
+
+                <!-- Options -->
+                <div class="md:w-2/3 flex flex-col gap-4 relative" id="cross-options">
+                    <button onclick="selectPath('sepia-gold')" class="flex-1 bg-sepia-bg border border-sepia-border rounded border-l-8 border-l-sepia-gold flex flex-col justify-center p-8 text-left group hover:bg-sepia-panel transition-colors">
+                        <h3 class="font-vintage font-bold text-3xl text-sepia-light mb-2 group-hover:text-sepia-gold transition-colors italic">Call and Apologize</h3>
+                        <p class="font-sans font-bold text-sepia-accent">Try to clear the air and say you're sorry, even if it brings up old pain for them.</p>
+                    </button>
+                    <button onclick="selectPath('sepia-light')" class="flex-1 bg-sepia-bg border border-sepia-border rounded border-l-8 border-l-sepia-light flex flex-col justify-center p-8 text-left group hover:bg-sepia-panel transition-colors">
+                        <h3 class="font-vintage font-bold text-3xl text-sepia-light mb-2 group-hover:drop-shadow-[0_0_10px_rgba(232,220,199,0.8)] transition-all italic">Stay Silent</h3>
+                        <p class="font-sans font-bold text-sepia-accent">Leave them in peace. Let time do its job and carry your own guilt silently.</p>
+                    </button>
+                </div>
+
+                <!-- Timer Screen -->
+                <div class="md:w-2/3 hidden vintage-panel rounded flex-col items-center justify-center p-10 border-t-4" id="cross-timer">
+                    <h3 class="font-vintage font-bold text-3xl text-sepia-light mb-6 tracking-widest italic" id="ct-title">Defend your choice!</h3>
+                    <div class="w-full h-2 bg-sepia-bg rounded mb-8 overflow-hidden shadow-inner border border-sepia-border">
+                        <div id="ct-bar" class="h-full w-full transition-all linear"></div>
+                    </div>
+                    <p class="font-mono text-5xl font-bold text-sepia-light" id="ct-clock">0:30</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- TRACK 25: PLATINUM RECORD -->
+        <section class="slide">
+            <h2 class="font-mono text-sepia-gold text-[10px] font-bold uppercase tracking-[0.3em] mb-2 text-center">Track 25</h2>
+            <h1 class="font-vintage font-bold text-4xl md:text-6xl text-sepia-light mb-10 tracking-widest text-center italic">Curtain Call</h1>
+            <div class="text-center relative z-20 flex flex-col items-center justify-center h-full">
+                <div class="relative mb-12">
+                    <div class="absolute inset-0 bg-sepia-gold rounded-full blur-[60px] opacity-20 w-64 h-64"></div>
+                    <div class="w-72 h-72 rounded-full border-[10px] border-[#3d3731] flex flex-col items-center justify-center bg-[#1f1c18] shadow-2xl relative vinyl-spin z-10">
+                        <div class="absolute inset-2 rounded-full border border-black/20"></div>
+                        <div class="absolute inset-6 rounded-full border border-black/20"></div>
+                        <div class="w-24 h-24 rounded-full bg-sepia-bg border-4 border-[#3d3731] flex flex-col items-center justify-center shadow-inner z-20 overflow-hidden relative">
+                            <img src="https://upload.wikimedia.org/wikipedia/en/8/85/Adele_-_Hello_%28Official_Single_Cover%29.png" class="absolute inset-0 w-full h-full object-cover opacity-80 sepia mix-blend-multiply">
+                            <div class="w-4 h-4 rounded-full bg-black relative z-30"></div>
+                        </div>
+                    </div>
+                </div>
+                <h1 class="text-5xl lg:text-7xl font-vintage font-bold mb-4 tracking-tighter text-sepia-light drop-shadow-[0_0_15px_rgba(232,220,199,0.5)] italic">Platinum Record</h1>
+                <p class="text-xl text-sepia-gold font-sans font-bold mb-12">"You've finally healed."</p>
+                <div class="flex gap-4">
+                    <button onclick="rate(1)" class="star text-4xl opacity-30 hover:opacity-100 transition-all cursor-pointer grayscale hover:grayscale-0">⭐</button>
+                    <button onclick="rate(2)" class="star text-4xl opacity-30 hover:opacity-100 transition-all cursor-pointer grayscale hover:grayscale-0">⭐</button>
+                    <button onclick="rate(3)" class="star text-4xl opacity-30 hover:opacity-100 transition-all cursor-pointer grayscale hover:grayscale-0">⭐</button>
+                    <button onclick="rate(4)" class="star text-4xl opacity-30 hover:opacity-100 transition-all cursor-pointer grayscale hover:grayscale-0">⭐</button>
+                    <button onclick="rate(5)" class="star text-4xl opacity-30 hover:opacity-100 transition-all cursor-pointer grayscale hover:grayscale-0">⭐</button>
+                </div>
+                <button onclick="location.reload()" class="mt-12 px-10 py-4 border border-sepia-light text-sepia-light font-sans font-bold uppercase tracking-widest rounded hover:bg-sepia-light hover:text-sepia-bg transition-colors shadow-[0_0_15px_rgba(232,220,199,0.2)]">Hang Up</button>
+            </div>
+        </section>
+    </main>
+
+    <!-- PLAYER CONTROLS (Footer) -->
+    <footer class="h-[100px] bg-[#141210] border-t border-sepia-border fixed bottom-0 w-full z-40 flex items-center justify-between px-6 lg:px-8 shadow-[0_-10px_30px_rgba(0,0,0,0.9)]">
+        <div class="flex items-center gap-4 w-1/3">
+            <div class="w-14 h-14 rounded bg-sepia-dark border border-sepia-border hidden md:flex items-center justify-center shadow-[0_0_10px_rgba(0,0,0,0.8)] overflow-hidden">
+                <img src="https://upload.wikimedia.org/wikipedia/en/8/85/Adele_-_Hello_%28Official_Single_Cover%29.png" alt="Cover" class="w-full h-full object-cover sepia-[0.8] hover:sepia-0 transition-all">
+            </div>
+            <div>
+                <h4 class="font-vintage font-bold text-sepia-light text-lg tracking-wider italic">Hello</h4>
+                <p class="text-sepia-accent text-[10px] font-mono uppercase font-bold tracking-widest">Wolffy Studios</p>
+            </div>
+        </div>
+
+        <div class="flex flex-col items-center w-1/3 gap-1">
+            <div class="flex items-center gap-6 md:gap-8">
+                <button onclick="prevSlide()" id="btn-prev" class="text-sepia-accent hover:text-sepia-light transition-colors disabled:opacity-30"><i class="fa-solid fa-backward-step text-xl"></i></button>
+                <button onclick="togglePlay(this)" class="w-12 h-12 rounded-full bg-sepia-dark border border-sepia-border text-sepia-light flex items-center justify-center hover:border-sepia-light transition-all shadow-[0_0_10px_rgba(0,0,0,0.5)]"><i id="icon-play" class="fa-solid fa-play ml-1 hidden"></i><i id="icon-pause" class="fa-solid fa-pause"></i></button>
+                <button onclick="nextSlide()" id="btn-next" class="text-sepia-accent hover:text-sepia-light transition-colors disabled:opacity-30"><i class="fa-solid fa-forward-step text-xl"></i></button>
+            </div>
+            <div class="w-full max-w-xs flex items-center gap-2">
+                <span class="text-[9px] font-mono text-sepia-accent" id="cur-step">01</span>
+                <div class="flex-1 h-1 bg-sepia-dark rounded overflow-hidden">
+                    <div id="prog-bar" class="h-full bg-sepia-light w-0 transition-all duration-300 shadow-[0_0_5px_#e8dcc7]"></div>
+                </div>
+                <span class="text-[9px] font-mono text-sepia-accent">25</span>
+            </div>
+        </div>
+
+        <div class="w-1/3 flex justify-end gap-4">
+            <button onclick="toggleTeacher()" class="bg-sepia-dark border border-sepia-border w-10 h-10 md:w-12 md:h-12 rounded flex items-center justify-center text-sepia-accent hover:text-sepia-light transition-colors">
+                <i class="fa-solid fa-phone-volume text-sm"></i>
+            </button>
+            <button onclick="toggleFS()" class="bg-sepia-dark border border-sepia-border w-10 h-10 md:w-12 md:h-12 rounded hidden md:flex items-center justify-center text-sepia-accent hover:text-sepia-light transition-colors">
+                <i class="fa-solid fa-expand text-sm"></i>
+            </button>
+        </div>
+    </footer>
+
+    <script>
+        let current = 0;
+        const slides = document.querySelectorAll('.slide');
+        
+        function updateStage() {
+            slides.forEach(s => s.classList.remove('active'));
+            slides[current].classList.add('active');
+            
+            document.getElementById('cur-step').innerText = (current + 1).toString().padStart(2, '0');
+            document.getElementById('prog-bar').style.width = `${(current / (slides.length - 1)) * 100}%`;
+            document.getElementById('btn-prev').disabled = current === 0;
+            document.getElementById('btn-next').disabled = current === slides.length - 1;
+            document.getElementById('stage').scrollTop = 0;
+            
+            clearInterval(rapInt); clearInterval(vnInt); clearInterval(crossInt);
+        }
+
+        function nextSlide() { if(current < slides.length - 1) { current++; updateStage(); } }
+        function prevSlide() { if(current > 0) { current--; updateStage(); } }
+        function toggleFS() { if(!document.fullscreenElement) document.documentElement.requestFullscreen().catch(()=>{}); else document.exitFullscreen(); }
+
+        let isPlaying = true;
+        function togglePlay() {
+            isPlaying = !isPlaying;
+            document.getElementById('icon-play').classList.toggle('hidden', isPlaying);
+            document.getElementById('icon-pause').classList.toggle('hidden', !isPlaying);
+            document.querySelectorAll('.vinyl-spin').forEach(el => el.classList.toggle('paused', !isPlaying));
+        }
+
+        function toggleTeacher() { document.getElementById('teacher-panel').classList.toggle('open'); }
+        
+        function praise(txt) {
+            toggleTeacher();
+            const ov = document.getElementById('praise-overlay');
+            const pt = document.getElementById('praise-text');
+            pt.innerText = txt;
+            ov.classList.remove('opacity-0', 'pointer-events-none');
+            setTimeout(() => pt.classList.replace('scale-50', 'scale-100'), 50);
+            shootConfetti();
+            setTimeout(() => { 
+                pt.classList.replace('scale-100', 'scale-50'); 
+                ov.classList.add('opacity-0', 'pointer-events-none'); 
+            }, 2000);
+        }
+
+        function vibe(btn, text) {
+            document.getElementById('vibe-hub').classList.remove('hidden');
+            document.querySelectorAll('.mcq-btn').forEach(b => b.classList.remove('border-sepia-light'));
+            btn.classList.add('border-sepia-light');
+            shootConfetti(0.5);
+        }
+
+        function checkTrivia(btn, isCorrect) {
+            const btns = btn.parentElement.querySelectorAll('button');
+            btns.forEach(b => b.disabled = true);
+            if(isCorrect) {
+                btn.classList.add('border-sepia-light');
+                btn.querySelector('span').classList.replace('text-sepia-accent', 'text-sepia-light');
+                document.getElementById('trivia-hub').classList.remove('hidden');
+                shootConfetti();
+            } else {
+                btn.classList.add('shake', 'border-red-500');
+                btn.querySelector('span').classList.replace('text-sepia-accent', 'text-red-500');
+            }
+        }
+
+        function developPolaroid(el, word, def, question, iconClass) {
+            const slide = el.closest('.slide');
+            const isFirstTime = !el.classList.contains('developed');
+            
+            if(isFirstTime) {
+                const emojiEl = el.querySelector('.polaroid-emoji');
+                if (emojiEl) emojiEl.className = `fa-solid ${iconClass} polaroid-emoji`;
+                el.classList.add('developed');
+            }
+            
+            slide.querySelectorAll('.polaroid').forEach(p => p.classList.remove('border-sepia-light', 'shadow-[0_0_30px_rgba(200,178,146,0.3)]'));
+            el.classList.add('border-sepia-light', 'shadow-[0_0_30px_rgba(200,178,146,0.3)]');
+            
+            const targetHubId = slide.querySelector('[id^="polaroid-hub-"]').id;
+            const targetHub = document.getElementById(targetHubId);
+            
+            if (targetHub) {
+                const titleNum = targetHubId.split('-')[2];
+                document.getElementById(`polaroid-title-${titleNum}`).innerText = word;
+                document.getElementById(`polaroid-def-${titleNum}`).innerText = def;
+                document.getElementById(`polaroid-q-${titleNum}`).innerText = "🗣️ " + question;
+                targetHub.classList.remove('hidden');
+            }
+            
+            if(isFirstTime) {
+                const numDeveloped = slide.querySelectorAll('.developed').length;
+                if(numDeveloped === 2) shootConfetti(1);
+            }
+        }
+
+        function checkTF(btn, isCorrect, hub) {
+            const btns = btn.parentElement.querySelectorAll('button');
+            btns.forEach(b => b.disabled = true);
+            if(isCorrect) {
+                btn.classList.replace('bg-sepia-dark', 'bg-sepia-light');
+                btn.classList.replace('text-sepia-accent', 'text-sepia-bg');
+                btn.classList.replace('border-sepia-border', 'border-sepia-light');
+                document.getElementById(hub).classList.remove('hidden');
+                shootConfetti();
+            } else {
+                btn.classList.add('shake', 'border-red-500', 'text-red-500');
+            }
+        }
+
+        function hackLyric(el, hubId) {
+            el.closest('.slide').querySelectorAll('.lyric-hl').forEach(h => h.classList.remove('active'));
+            el.closest('.slide').querySelectorAll('[id^="lh-"]').forEach(h => h.classList.add('hidden'));
+            
+            el.classList.add('active');
+            document.getElementById(hubId).classList.remove('hidden');
+            shootConfetti(0.5);
+        }
+
+        // MECHANICS: SWITCHBOARD (Grammar)
+        function toggleSwitch() {
+            const sw = document.getElementById('grammar-switch');
+            const fact = document.getElementById('switch-fact');
+            const deduction = document.getElementById('switch-deduction');
+            const lbl1 = document.getElementById('switch-lbl-1');
+            const lbl2 = document.getElementById('switch-lbl-2');
+
+            if(sw.classList.contains('switch-state-up')) {
+                sw.classList.replace('switch-state-up', 'switch-state-down');
+                fact.style.opacity = '0'; fact.style.transform = 'translateY(-20px)';
+                deduction.style.opacity = '1'; deduction.style.transform = 'translateY(0)';
+                lbl1.classList.add('opacity-30'); lbl2.classList.remove('opacity-30');
+                shootConfetti();
+            } else {
+                sw.classList.replace('switch-state-down', 'switch-state-up');
+                deduction.style.opacity = '0'; deduction.style.transform = 'translateY(20px)';
+                fact.style.opacity = '1'; fact.style.transform = 'translateY(0)';
+                lbl2.classList.add('opacity-30'); lbl1.classList.remove('opacity-30');
+            }
+        }
+
+        function checkPatch(btn, isCorrect, hub) {
+            const btns = btn.parentElement.querySelectorAll('button');
+            btns.forEach(b => b.disabled = true);
+            if(isCorrect) {
+                btn.classList.replace('bg-sepia-bg', 'bg-sepia-light');
+                btn.classList.replace('text-sepia-accent', 'text-sepia-bg');
+                btn.classList.replace('border-sepia-border', 'border-sepia-light');
+                document.getElementById(hub).classList.remove('hidden');
+                shootConfetti();
+            } else {
+                btn.classList.add('shake', 'border-red-500', 'text-red-500');
+            }
+        }
+
+        let tlClick = 0;
+        const tlExp = [1, 2, 3];
+        function selectTimeline(btn) {
+            if(btn.classList.contains('border-sepia-light')) return;
+            const ord = parseInt(btn.getAttribute('data-order'));
+            
+            if(ord === tlExp[tlClick]) {
+                tlClick++;
+                btn.classList.replace('border-sepia-border', 'border-sepia-light');
+                btn.classList.replace('text-sepia-gold', 'text-sepia-light');
+                const num = btn.querySelector('.timeline-number');
+                num.innerText = tlClick;
+                num.classList.remove('hidden');
+                if(tlClick === 3) { document.getElementById('timeline-hub').classList.remove('hidden'); shootConfetti(); }
+            } else {
+                btn.classList.add('shake', 'border-red-500', 'text-red-500');
+                setTimeout(() => btn.classList.remove('shake', 'border-red-500', 'text-red-500'), 400);
+            }
+        }
+
+        const rapQ = [
+            "Your best friend didn't answer the phone yesterday. Why?",
+            "You failed your driving test last week. What went wrong?",
+            "She didn't reply to my apology message. Why?"
+        ];
+        let rapIdx = 0; let rapInt;
+        function startRapid() {
+            document.getElementById('rap-btn').style.display = 'none';
+            document.getElementById('rap-container').classList.replace('border-sepia-border', 'border-sepia-light');
+            document.getElementById('rap-container').classList.add('shadow-[0_0_30px_rgba(232,220,199,0.3)]');
+            runRapRound();
+        }
+        function runRapRound() {
+            if(rapIdx >= rapQ.length) {
+                document.getElementById('rap-q').innerText = "INTERROGATION SURVIVED.";
+                document.getElementById('rap-q').classList.replace('text-sepia-light', 'text-sepia-gold');
+                document.getElementById('rap-timer').style.width = '0%';
+                shootConfetti(2);
+                return;
+            }
+            document.getElementById('rap-q').innerText = '"' + rapQ[rapIdx] + '"';
+            
+            const flash = document.getElementById('rap-bg-flash');
+            flash.classList.remove('opacity-0');
+            setTimeout(() => flash.classList.add('opacity-0'), 150);
+
+            let w = 100; const bar = document.getElementById('rap-timer');
+            clearInterval(rapInt);
+            rapInt = setInterval(() => {
+                w -= (100/150);
+                bar.style.width = w + '%';
+                if(w <= 0) { clearInterval(rapInt); rapIdx++; runRapRound(); }
+            }, 100);
+        }
+
+        let vnInt; let vnSecs = 45;
+        function startVN() {
+            const btn = document.getElementById('vn-btn');
+            btn.classList.replace('bg-sepia-light', 'bg-sepia-dark');
+            btn.classList.replace('text-sepia-bg', 'text-red-500');
+            btn.classList.replace('border-[#141210]', 'border-red-500');
+            document.getElementById('vn-overlay').classList.remove('opacity-0', 'pointer-events-none');
+            vnSecs = 45;
+            document.getElementById('vn-time').innerText = `0:${vnSecs.toString().padStart(2,'0')} / 0:45`;
+            
+            vnInt = setInterval(() => {
+                vnSecs--;
+                document.getElementById('vn-time').innerText = `0:${vnSecs.toString().padStart(2,'0')} / 0:45`;
+                document.getElementById('vn-prog').style.width = `${((45-vnSecs)/45)*100}%`;
+                if(vnSecs <= 0) stopVN();
+            }, 1000);
+        }
+        function stopVN() {
+            clearInterval(vnInt);
+            const btn = document.getElementById('vn-btn');
+            btn.classList.replace('bg-sepia-dark', 'bg-sepia-light');
+            btn.classList.replace('text-red-500', 'text-sepia-bg');
+            btn.classList.replace('border-red-500', 'border-[#141210]');
+            document.getElementById('vn-overlay').classList.add('opacity-0', 'pointer-events-none');
+            if(vnSecs < 42) { document.getElementById('vn-hub').classList.remove('hidden'); shootConfetti(); }
+        }
+
+        let crossInt;
+        function selectPath(color) {
+            document.getElementById('cross-options').style.display = 'none';
+            const tmr = document.getElementById('cross-timer');
+            tmr.classList.replace('hidden', 'flex');
+            tmr.classList.add('border-' + color);
+            tmr.classList.add(`shadow-[0_0_30px_var(--tw-colors-${color})]`);
+            
+            let w = 100; let secs = 30;
+            const bar = document.getElementById('ct-bar');
+            bar.classList.add('bg-' + color);
+            
+            crossInt = setInterval(() => {
+                w -= (100/300); bar.style.width = w + '%';
+                if(w % (100/30) < (100/300)) { secs--; document.getElementById('ct-clock').innerText = `0:${secs.toString().padStart(2,'0')}`; }
+                if(w <= 0) { 
+                    clearInterval(crossInt); 
+                    document.getElementById('ct-title').innerText = "TIME IS UP."; 
+                    document.getElementById('ct-clock').classList.add(`text-${color}`);
+                    shootConfetti(); 
+                }
+            }, 100);
+        }
+
+        function rate(stars) {
+            document.querySelectorAll('.star').forEach((s, i) => {
+                if(i < stars) s.classList.remove('opacity-30', 'grayscale');
+                else s.classList.add('opacity-30', 'grayscale');
+            });
+            shootConfetti();
+        }
+
+        function shootConfetti(sec=1) {
+            if (typeof confetti !== 'function') return;
+            var duration = sec * 1000; var end = Date.now() + duration;
+            (function frame() {
+                confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#e8dcc7', '#c8b292', '#8b6f4e'] });
+                confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#e8dcc7', '#c8b292', '#8b6f4e'] });
+                if (Date.now() < end) requestAnimationFrame(frame);
+            }());
+        }
+
+        window.onload = updateStage;
+    </script>
+</body>
+</html>
